@@ -1,6 +1,6 @@
 import express from 'express';
 import Logging from '../library/Logging';
-import authorRoutes from '../routes/Author';
+import userRoutes from '../routes/user.routes';
 import bookRoutes from '../routes/Book';
 
 function createServer() {
@@ -36,7 +36,7 @@ function createServer() {
     });
 
     /** Routes */
-    app.use('/authors', authorRoutes);
+    app.use('/api/users', userRoutes);
     app.use('/books', bookRoutes);
 
     /** Healthcheck */

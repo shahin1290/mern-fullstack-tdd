@@ -1,9 +1,15 @@
-import { NextFunction, Request, Response } from 'express';
-import mongoose from 'mongoose';
-import Author from '../models/Author';
+import { CreateUserInput } from './../middleware/validateUser';
+import { Request, Response } from 'express';
+import { createUser } from '../service/user.service';
 
-const createAuthor = (req: Request, res: Response, next: NextFunction) => {
-    const { name } = req.body;
+export async function createUserHandler(req: Request<{}, {}, CreateUserInput['body']>, res: Response) {
+    try {
+        const user = await createUser(req.body);
+        return res.send(user);
+    } catch (e: any) {
+        return res.status(409).send(e.message);
+    }
+    /* const { name } = req.body;
 
     const author = new Author({
         _id: new mongoose.Types.ObjectId(),
@@ -13,10 +19,10 @@ const createAuthor = (req: Request, res: Response, next: NextFunction) => {
     return author
         .save()
         .then((author) => res.status(201).json({ author }))
-        .catch((error) => res.status(500).json({ error }));
-};
+        .catch((error) => res.status(500).json({ error })); */
+}
 
-const readAuthor = (req: Request, res: Response, next: NextFunction) => {
+/* const readAuthor = (req: Request, res: Response, next: NextFunction) => {
     const authorId = req.params.authorId;
 
     return Author.findById(authorId)
@@ -55,6 +61,4 @@ const deleteAuthor = (req: Request, res: Response, next: NextFunction) => {
     return Author.findByIdAndDelete(authorId)
         .then((author) => (author ? res.status(201).json({ author, message: 'Deleted' }) : res.status(404).json({ message: 'not found' })))
         .catch((error) => res.status(500).json({ error }));
-};
-
-export default { createAuthor, readAuthor, readAll, updateAuthor, deleteAuthor };
+}; */
