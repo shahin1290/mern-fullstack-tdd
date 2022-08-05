@@ -1,5 +1,5 @@
-import { NextFunction, Request, Response } from 'express';
-import { z } from 'zod';
+/* import { NextFunction, Request, Response } from 'express';
+import { z, ZodError } from 'zod';
 
 export const createUserSchema = z.object({
     body: z.object({
@@ -19,6 +19,49 @@ export const validateUser = (req: Request, res: Response, next: NextFunction) =>
         });
         next();
     } catch (e: any) {
-        return res.status(400).send(e.flatten());
+        if (e instanceof ZodError) {
+            const validationErrors:any = {};
+
+            return res.status(400).json(e.issues.forEach((issue) => (validationErrors[issue.path] = issue.message)));
+        }
+        return res.status(400).send({ message: 'internal server error' });
     }
 };
+ */
+
+import { NextFunction, Request, Response } from 'express';
+import { validationResult, check } from 'express-validator';
+import UserModel from '../models/user.model';
+
+export const registerSchema = [
+    check('name').notEmpty().withMessage('Name is required'),
+    check('email')
+        .notEmpty()
+        .withMessage('Email is required')
+        .bail()
+        .isEmail()
+        .withMessage('Not a valid email')
+        .bail()
+        .custom(async (email) => {
+            const user = await UserModel.findOne({ email });
+
+            if (user) {
+                throw new Error('Email is already in use');
+            }
+        }),
+    check('password').notEmpty().withMessage('Password is required').bail().isLength({ min: 5 }).withMessage('password must be at least 5 characters long')
+];
+
+export function validateRequestSchema(req: Request, res: Response, next: NextFunction) {
+    const errors = validationResult(req);
+
+    let validationErrors: any;
+
+    if (!errors.isEmpty()) {
+        validationErrors = {};
+        errors.array().forEach((error) => (validationErrors[error.param] = error.msg));
+
+        return res.status(400).send({ validationErrors });
+    }
+    next();
+}

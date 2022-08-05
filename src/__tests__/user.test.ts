@@ -4,6 +4,7 @@ import mongoose, { Collection } from 'mongoose';
 import supertest from 'supertest';
 import * as UserService from '../service/user.service';
 import createServer from '../utils/server';
+import UserModel from '../models/user.model';
 
 const app = createServer();
 
@@ -43,6 +44,18 @@ describe('user', () => {
                 });
                 expect(response.status).toBe(200);
             });
+            it('hashes the password in database', async () => {
+                await postUser({
+                    name: 'user1',
+                    email: 'user1@mail.com',
+                    password: 'P4ssword'
+                });
+                const userList = await UserModel.find();
+                const savedUser = userList[0];
+                console.log(savedUser);
+
+                expect(savedUser.password).not.toBe('P4ssword');
+            });
         });
         describe('given the username and password are valid', () => {
             it('should return the user payload', async () => {
@@ -64,7 +77,7 @@ describe('user', () => {
             });
         });
         describe('given the name is empty', () => {
-            it('should return 409', async () => {
+            it('should return 400', async () => {
                 const response = await postUser({
                     name: null,
                     email: 'user1@mail.com',
@@ -76,24 +89,29 @@ describe('user', () => {
         describe('given undesired name and email and password are provided', () => {
             it.each`
                 field         | value              | expectedMessage
-                ${'name'}     | ${''}              | ${'Name is required'}
-                ${'email'}    | ${''}              | ${'Email is required'}
+                ${'name'}     | ${null}            | ${'Name is required'}
+                ${'email'}    | ${null}            | ${'Email is required'}
                 ${'email'}    | ${'mail.com'}      | ${'Not a valid email'}
                 ${'email'}    | ${'user.mail.com'} | ${'Not a valid email'}
                 ${'email'}    | ${'user@mail'}     | ${'Not a valid email'}
-                ${'password'} | ${''}              | ${'Password is required'}
-                ${'password'} | ${'P4ssw'}         | ${'Password too short - should be 6 chars minimum'}
+                ${'password'} | ${null}            | ${'Password is required'}
+                ${'password'} | ${'pass'}          | ${'password must be at least 5 characters long'}
             `('returns $expectedMessage when $field is $value', async ({ field, expectedMessage, value }) => {
-                const user: any = {
-                    name: 'user1',
-                    email: 'user1@mail.com',
-                    password: 'P4ssword'
-                };
+                const user: any = {};
                 user[field] = value;
                 const response = await postUser(user);
-                const errorBody = response.body.fieldErrors.body;
+                const body = response.body;
+                expect(body.validationErrors[field]).toBe(expectedMessage);
+            });
+        });
 
-                expect(errorBody).toContain(expectedMessage);
+        describe('given the email exists', () => {
+            it('should return error message: Email is already in use', async () => {
+                await UserService.createUser({ name: 'shahin', email: 'user1@mail.com', password: 'P4ssword' });
+
+                const response = await postUser({ name: 'new', email: 'user1@mail.com', password: 'ssssss' });
+
+                expect(response.body.validationErrors.email).toBe('Email is already in use');
             });
         });
     });

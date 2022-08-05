@@ -8,6 +8,8 @@ const MONGO_URL = `mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@cluster0.bz
 
 const SERVER_PORT = process.env.SERVER_PORT ? Number(process.env.SERVER_PORT) : 1337;
 
+const SOLT_WORK_FACTOR = 10;
+
 export const config = {
     mongo: {
         username: MONGO_USERNAME,
@@ -16,5 +18,6 @@ export const config = {
     },
     server: {
         port: SERVER_PORT
-    }
+    },
+    saltWorkFactor: SOLT_WORK_FACTOR
 };
