@@ -52,16 +52,8 @@ export const registerSchema = [
     check('password').notEmpty().withMessage('Password is required').bail().isLength({ min: 5 }).withMessage('password must be at least 5 characters long')
 ];
 
-export function validateRequestSchema(req: Request, res: Response, next: NextFunction) {
-    const errors = validationResult(req);
+export const loginSchema = [
+    check('email').notEmpty().withMessage('Email is required').bail().isEmail().withMessage('Not a valid email'),
 
-    let validationErrors: any;
-
-    if (!errors.isEmpty()) {
-        validationErrors = {};
-        errors.array().forEach((error) => (validationErrors[error.param] = error.msg));
-
-        return res.status(400).send({ validationErrors });
-    }
-    next();
-}
+    check('password').notEmpty().withMessage('Password is required')
+];

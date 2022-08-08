@@ -1,11 +1,15 @@
 import express from 'express';
-import { createUserHandler } from '../controllers/user.controller';
-import { registerSchema, validateRequestSchema } from '../middleware/validateUser';
+import { check } from 'express-validator';
+import { createUserHandler, signinHandler, updateUserHandler } from '../controllers/user.controller';
+import { registerSchema, loginSchema } from '../middleware/validateUser';
 //import { validateUser } from '../middleware/validateUser';
 
 const router = express.Router();
 
-router.post('/', registerSchema, validateRequestSchema, createUserHandler);
+router.post('/', registerSchema, createUserHandler);
+router.post('/signin', loginSchema, signinHandler);
+router.put('/:id', updateUserHandler);
+
 /* router.get('/get/:authorId', controller.readAuthor);
 router.get('/get', controller.readAll);
 router.patch('/update/:authorId', controller.updateAuthor);

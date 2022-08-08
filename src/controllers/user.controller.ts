@@ -1,64 +1,50 @@
+const bcrypt = require('bcrypt');
 //import { CreateUserInput } from './../middleware/validateUser';
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
+import { validationResult } from 'express-validator';
+import { AuthenticationException } from '../error/AuthenticationException';
+import { ForbiddenException } from '../error/ForbiddenException';
+import { ValidationException } from '../error/ValidationException';
+import UserModel from '../models/user.model';
 import { createUser } from '../service/user.service';
 
-export async function createUserHandler(req: Request, res: Response) {
-    try {
-        const user = await createUser(req.body);
-        return res.send(user);
-    } catch (e: any) {
-        return res.status(409).send(e.message);
+export async function createUserHandler(req: Request, res: Response, next: NextFunction) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return next(new (ValidationException as any)(errors.array()));
     }
-    /* const { name } = req.body;
-
-    const author = new Author({
-        _id: new mongoose.Types.ObjectId(),
-        name
-    });
-
-    return author
-        .save()
-        .then((author) => res.status(201).json({ author }))
-        .catch((error) => res.status(500).json({ error })); */
+    try {
+        await createUser(req.body);
+        return res.send({ message: 'User created Successfully' });
+    } catch (err: any) {
+        next(err);
+    }
+}
+export async function updateUserHandler(req: Request, res: Response, next: NextFunction) {
+    return next(new (ForbiddenException as any)('not authorized'));
 }
 
-/* const readAuthor = (req: Request, res: Response, next: NextFunction) => {
-    const authorId = req.params.authorId;
+export async function signinHandler(req: Request, res: Response, next: NextFunction) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return next(new (AuthenticationException as any)(errors.array()));
+    }
+    try {
+        const { email, password } = req.body;
+        const user = await UserModel.findOne({ email });
 
-    return Author.findById(authorId)
-        .then((author) => (author ? res.status(200).json({ author }) : res.status(404).json({ message: 'not found' })))
-        .catch((error) => res.status(500).json({ error }));
-};
+        if (!user) {
+            return next(new (AuthenticationException as any)());
+        }
 
-const readAll = (req: Request, res: Response, next: NextFunction) => {
-    return Author.find()
-        .then((authors) => res.status(200).json({ authors }))
-        .catch((error) => res.status(500).json({ error }));
-};
+        const match = await bcrypt.compare(password, user.password);
 
-const updateAuthor = (req: Request, res: Response, next: NextFunction) => {
-    const authorId = req.params.authorId;
+        console.log(match);
 
-    return Author.findById(authorId)
-        .then((author) => {
-            if (author) {
-                author.set(req.body);
+        if (!match) {
+            return next(new (AuthenticationException as any)());
+        }
 
-                return author
-                    .save()
-                    .then((author) => res.status(201).json({ author }))
-                    .catch((error) => res.status(500).json({ error }));
-            } else {
-                return res.status(404).json({ message: 'not found' });
-            }
-        })
-        .catch((error) => res.status(500).json({ error }));
-};
-
-const deleteAuthor = (req: Request, res: Response, next: NextFunction) => {
-    const authorId = req.params.authorId;
-
-    return Author.findByIdAndDelete(authorId)
-        .then((author) => (author ? res.status(201).json({ author, message: 'Deleted' }) : res.status(404).json({ message: 'not found' })))
-        .catch((error) => res.status(500).json({ error }));
-}; */
+        return res.send({ id: user._id, name: user.name });
+    } catch (error) {}
+}

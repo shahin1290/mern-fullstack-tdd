@@ -6,7 +6,7 @@ import { omit } from 'lodash';
 export async function createUser(input: DocumentDefinition<Omit<UserDocument, 'createdAt' | 'updatedAt'>>) {
     try {
         const user = await UserModel.create(input);
-        return omit(user.toJSON(), 'password');
+        return user;
     } catch (e: any) {
         throw new Error(e);
     }

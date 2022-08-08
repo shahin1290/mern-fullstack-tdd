@@ -1,7 +1,6 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import request from 'supertest';
-import mongoose, { Collection } from 'mongoose';
-import supertest from 'supertest';
+import mongoose from 'mongoose';
 import * as UserService from '../service/user.service';
 import createServer from '../utils/server';
 import UserModel from '../models/user.model';
@@ -12,7 +11,7 @@ describe('user', () => {
     beforeAll(async () => {
         const mongoServer = await MongoMemoryServer.create();
         await mongoose.connect(mongoServer.getUri());
-        jest.setTimeout(20000);
+       
     });
 
     beforeEach(async () => {
@@ -52,7 +51,6 @@ describe('user', () => {
                 });
                 const userList = await UserModel.find();
                 const savedUser = userList[0];
-                console.log(savedUser);
 
                 expect(savedUser.password).not.toBe('P4ssword');
             });
@@ -112,6 +110,14 @@ describe('user', () => {
                 const response = await postUser({ name: 'new', email: 'user1@mail.com', password: 'ssssss' });
 
                 expect(response.body.validationErrors.email).toBe('Email is already in use');
+            });
+        });
+
+        describe('Error Model', () => {
+            it('returns path, timestamp, message and validationErrors in response when validation failure', async () => {
+                const response = await postUser({ name: null, email: 'user1@mail.com', password: 'ssssss' });
+                const body = response.body;
+                expect(Object.keys(body)).toEqual(['path', 'timestamp', 'message', 'validationErrors']);
             });
         });
     });
